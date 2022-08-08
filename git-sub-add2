@@ -1,0 +1,19 @@
+#! /usr/local/bin/zsh
+set -e
+
+if [[ $# -eq 0 ]]; then
+  echo "Missing required 'URL' argument."
+  exit 1
+fi
+URL=$1
+
+ROOT=${DOTFILES:-~/dotfiles}
+ROOT_CFG=${DOTFILES_CONFIG:-${ROOT}/config.json}
+
+KEY=$(jq -r '.submodules | keys[]' ${ROOT_CFG} | fzf)
+FOLDER=$(jq -r ".submodules.${KEY}" ${ROOT_CFG})
+AUTHOR=$(echo ${URL} | cut -d'/' -f4)
+TARGET="${KEY}/.local/share/${FOLDER}/${AUTHOR}"
+
+mkdir -p ${ROOT}/${TARGET}
+git -C ${ROOT} submodule add ${URL} ${TARGET}
