@@ -12,8 +12,9 @@ function _dot::submodule::add {
     local key=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf)
     local folder=$(jq -r ".submodules.$key" $DOTDIR_CONFIG)
     local author=$(echo $url | cut -d'/' -f4)
-    local target="$key/.local/share/$folder/$author"
+    local repo=$(echo $url | cut -d'/' -f5)
+    local target="$key/.local/share/$folder/$author/${repo[1,-5]}"
 
     git -C $DOTDIR submodule add $url $target
-    git -C $DOTDIR submodule update --init --recursive
+    git -C $DOTDIR submodule update --init --recursive $target
 }
