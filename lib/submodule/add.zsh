@@ -15,6 +15,6 @@ function _dot::submodule::add {
     local repo=$(echo $url | cut -d'/' -f5)
     local target="$key/.local/share/$folder/$author/${repo[1,-5]}"
 
-    git -C $DOTDIR submodule add $url $target
+    git -C $DOTDIR submodule add -f $url $target
     git -C $DOTDIR submodule update --init --recursive $target
 }
