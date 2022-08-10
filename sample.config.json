@@ -1,0 +1,5 @@
+{
+  "submodules": {
+    "sample_key": "sample/path/to/storage"
+  }
+}
