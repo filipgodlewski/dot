@@ -1,4 +1,4 @@
-#! /usr/local/bin/zsh
+#! /usr/bin/env zsh
 
 function _dot::cd {
     cd $DOTDIR

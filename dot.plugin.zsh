@@ -1,4 +1,4 @@
-#! /usr/local/bin/zsh
+#! /usr/bin/env zsh
 
 [[ -z "$DOT" ]] && export DOT="${${(%):-%x}:a:h}"
 [[ -z "$DOTDIR" ]] && export DOTDIR="$HOME/dotfiles"

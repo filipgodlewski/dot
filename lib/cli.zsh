@@ -1,8 +1,8 @@
-#! /usr/local/bin/zsh
+#! /usr/bin/env zsh
 
 function _dot::help {
     cat >&2 <<EOF
-Usage: ${(j: :)${(s.::.)0#_}} <command...> [options]
+Usage: ${(j: :)${(s.::.)0#_}% help} <command...> [options]
 
 Available commands:
 

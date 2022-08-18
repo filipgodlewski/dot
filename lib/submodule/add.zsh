@@ -1,8 +1,8 @@
-#! /usr/local/bin/zsh
+#! /usr/bin/env zsh
 
 function _dot::submodule::add::help {
     cat >&2 <<EOF
-Usage: ${(j: :)${(s.::.)0#_}} [-n, --key=KEY] <URL>
+Usage: ${(j: :)${(s.::.)0#_}% help} [-n, --key=KEY] <URL>
 EOF
     return 0
 }

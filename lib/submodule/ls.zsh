@@ -1,4 +1,4 @@
-#! /usr/local/bin/zsh
+#! /usr/bin/env zsh
 
 function _dot::submodule::ls {
     zparseopts -D -E -A opts -key:
@@ -16,5 +16,5 @@ function _dot::submodule::ls {
     for i in {1..$#urls}; do
       data+=("$(awk -v p=$parent '{sub(p, ""); print}' <<< $submodules[$i]) -> $urls[$i]")
     done
-    echo ${(F)data[@]} | grep -v '.local' | sort
+    echo ${(F)data} | grep -v '.local' | sort
 }
