@@ -1,6 +1,6 @@
 #! /usr/bin/env zsh
 
-function _dot::sys::up {_dot::sys::upgrade "$@"}
+function _dot::sys::up { _dot::sys::upgrade "$@" }
 function _dot::sys::upgrade {
   $0::_npm
   $0::_brew
