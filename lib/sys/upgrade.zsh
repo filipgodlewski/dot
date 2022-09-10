@@ -19,7 +19,7 @@ function _dot::sys::upgrade::_npm {
 
 function _dot::sys::upgrade::_brew {
   brew update
-  brew bundle dump --file=~/.Brewfile
+  brew bundle dump --force --file=~/.Brewfile
   brew bundle --file=~/.Brewfile
   brew cleanup --prune=all
 }
