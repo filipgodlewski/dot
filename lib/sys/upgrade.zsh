@@ -10,7 +10,7 @@ function _dot::sys::upgrade {
 
 function _dot::sys::upgrade::_npm {
   npm install --global npm
-  local outdated_packages=(${(f@)$(npm list -g --depth 0)##*/})
+  local outdated_packages=(${(f@)$(npm list -g --depth 0 -p)##*/})
   for package in $outdated_packages; do
     npm update -g $package
   done
@@ -19,6 +19,7 @@ function _dot::sys::upgrade::_npm {
 
 function _dot::sys::upgrade::_brew {
   brew update
+  brew bundle dump --file=~/.Brewfile
   brew bundle --file=~/.Brewfile
   brew cleanup --prune=all
 }
