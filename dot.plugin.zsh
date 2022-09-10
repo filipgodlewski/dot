@@ -8,4 +8,3 @@ for config_file ("$DOT"/lib/**/*.zsh); do
   source "$config_file"
 done
 unset config_file
-
