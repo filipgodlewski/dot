@@ -5,7 +5,10 @@ function _dot::sys::upgrade {
   $0::_npm
   $0::_brew
   _dot::submodule::up
-  [[ $+functions[_venv::update] ]] && venv update nvim  # external dependency!
+  if [[ $+functions[_venv] ]]; then  # external dependency!
+    venv update nvim
+    $0::_hosts
+  fi
 }
 
 function _dot::sys::upgrade::_npm {
@@ -22,4 +25,16 @@ function _dot::sys::upgrade::_brew {
   brew bundle dump --force --file=~/.Brewfile
   brew bundle --file=~/.Brewfile
   brew cleanup --prune=all
+}
+
+function _dot::sys::upgrade::_hosts {
+  local provider=$(jq -e -r '."hosts provider"' $DOTDIR_CONFIG 2> /dev/null)
+  (($? == 1)) && {echo "No 'hosts provider' set in $DOTDIR_CONFIG! Can't perform setting up hosts."; return 0}
+
+  if [[ $(_dot::submodule::ls --key sys | grep $provider 2> /dev/null) ]]; then
+    local repo_dir="$XDG_DATA_HOME/$(git submodule | grep $provider | cut -d' ' -f3)"
+    venv new --project-path $repo_dir 2> /dev/null
+    venv run --name $provider -m pip install -r $repo_dir/requirements.txt
+    venv run --name $provider $repo_dir/updateHostsFile.py -e fakenews gambling porn -f -r -a
+  fi
 }
