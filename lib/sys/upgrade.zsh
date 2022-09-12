@@ -6,12 +6,14 @@ function _dot::sys::upgrade {
   $0::_brew
   _dot::submodule::up
   if [[ $+functions[_venv] ]]; then  # external dependency!
+    echo ":: Upgrade nvim venv ::"
     venv update nvim
     $0::_hosts
   fi
 }
 
 function _dot::sys::upgrade::_npm {
+  echo ":: Upgrade npm ::"
   npm install --global npm
   local outdated_packages=(${(f@)$(npm list -g --depth 0 -p)##*/})
   for package in $outdated_packages; do
@@ -21,6 +23,7 @@ function _dot::sys::upgrade::_npm {
 }
 
 function _dot::sys::upgrade::_brew {
+  echo ":: Upgrade brew ::"
   brew update
   brew bundle dump --force --file=~/.Brewfile
   brew bundle --file=~/.Brewfile
@@ -28,6 +31,7 @@ function _dot::sys::upgrade::_brew {
 }
 
 function _dot::sys::upgrade::_hosts {
+  echo ":: Upgrade hosts ::"
   local provider=$(jq -e -r '."hosts provider"' $DOTDIR_CONFIG 2> /dev/null)
   (($? == 1)) && {echo "No 'hosts provider' set in $DOTDIR_CONFIG! Can't perform setting up hosts."; return 0}
 
