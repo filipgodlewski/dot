@@ -2,13 +2,14 @@
 
 function _dot::sys::up { _dot::sys::upgrade "$@" }
 function _dot::sys::upgrade {
-  $0::_npm
-  $0::_brew
-  _dot::submodule::up
+  zparseopts -D -F -K -all=all -npm=npm_pkgs -brew=brew_pkgs -submodules=git_submodules -nvim=nvim_pip -hosts=hosts_file
+
+  (($#all || $#npm_pkgs)) && $0::_npm
+  (($#all || $#brew_pkgs)) && $0::_brew
+  (($#all || $#git_submodules)) && _dot::submodule::up
   if [[ $+functions[_venv] ]]; then  # external dependency!
-    echo ":: Upgrade nvim venv ::"
-    venv update nvim
-    $0::_hosts
+    (($#all || $#nvim_pip)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
+    (($#all || $#hosts_file)) && $0::_hosts
   fi
 }
 
@@ -38,7 +39,7 @@ function _dot::sys::upgrade::_hosts {
   if [[ $(_dot::submodule::ls --key sys | grep $provider 2> /dev/null) ]]; then
     local repo_dir="$(git -C $DOTDIR submodule | grep $provider | cut -d' ' -f3)"
     venv new --project-path $DOTDIR/$repo_dir --no-link 2> /dev/null
-    venv run --name $provider -m pip install -r $repo_dir/requirements.txt
-    venv run --name $provider $repo_dir/updateHostsFile.py -e fakenews gambling porn -f -r -a
+    venv run --name $provider -m pip install -r $DOTDIR/$repo_dir/requirements.txt
+    venv run --name $provider $DOTDIR/$repo_dir/updateHostsFile.py -e fakenews gambling porn -f -r -a
   fi
 }
