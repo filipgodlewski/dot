@@ -22,9 +22,8 @@ function dot {
   zparseopts -D -E -K -- {h,-help}=help || return
 
   (( ${#@} == 0 && $#help )) && {_$0::help; return 0}
-  (( ${#@} && $#help )) && @="$@ --help"
   (($# > 0 && $+functions[_$0::$1])) || { _$0::help; return 1 }
 
   local cmd="$1"; shift
-  _dot::$cmd "$@"
+  (( $#help )) && _dot::$cmd "$@" --help || _dot::$cmd "$@"
 }
