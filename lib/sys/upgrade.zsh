@@ -47,5 +47,6 @@ function _dot::sys::upgrade::_hosts {
     venv new --project-path $DOTDIR/$repo_dir --no-link 2> /dev/null
     venv run --name $provider -m pip install -r $DOTDIR/$repo_dir/requirements.txt
     venv run --name $provider $DOTDIR/$repo_dir/updateHostsFile.py -e fakenews gambling porn -f -r -a
+    git -C $DOTDIR/$repo_dir reset --hard
   fi
 }
