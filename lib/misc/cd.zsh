@@ -1,6 +1,6 @@
 #! /usr/bin/env zsh
 
-function _dot::sys::help {
+function _dot::cd::help {
   cat >&2 <<EOF
 USAGE:
     ${(j: :)${(s.::.)0#_}% help} <SUBCOMMAND>
