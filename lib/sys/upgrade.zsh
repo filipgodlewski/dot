@@ -2,14 +2,20 @@
 
 function _dot::sys::up { _dot::sys::upgrade "$@" }
 function _dot::sys::upgrade {
-  zparseopts -D -F -A opts -all -npm -brew -submodules -nvim -hosts
+  zparseopts -D -F -K -- \
+    {a,-all}=all \
+    {b,-brew}=brew \
+    {n,-npm}=npm \
+    {s,-submodules}=sm \
+    {v,-venv}=venv \
+    {h,-hosts}=hosts || return
 
-  (($#opts[--all] || $#opts[--npm])) && $0::_npm
-  (($#opts[--all] || $#opts[--brew])) && $0::_brew
-  (($#opts[--all] || $#opts[--submodules])) && _dot::submodule::up
+  (($#all || $#npm)) && $0::_npm
+  (($#all || $#brew)) && $0::_brew
+  (($#all || $#sm)) && _dot::submodule::up
   if [[ $+functions[_venv] ]]; then  # external dependency!
-    (($#opts[--all] || $#opts[--nvim])) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
-    (($#opts[--all] || $#opts[--hosts])) && $0::_hosts
+    (($#all || $#venv)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
+    (($#all || $#hosts)) && $0::_hosts
   fi
 }
 
