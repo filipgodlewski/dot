@@ -1,20 +1,36 @@
 #! /usr/bin/env zsh
 
+function _dot::sys::upgrade::help {
+  cat >&2 <<EOF
+USAGE:
+    ${(j: :)${(s.::.)0#_}% help} [options]
+
+    Upgrade system-wide applications, packages, hosts and such.
+
+OPTIONS:
+    -a, --all                         Update everything: npm, brew and submodules, nvim venv, and hosts.
+    -p, --packages                    Update npm, brew and submodules.
+    -n, --nvim-venv                   Update nvim venv python packages.
+    -h, --hosts                       Update hosts file with blockers for fakenews, gambling and porn sites.
+    -h, --help                        Show this message.
+EOF
+  return 0
+}
 function _dot::sys::up { _dot::sys::upgrade "$@" }
 function _dot::sys::upgrade {
+  trap "unset help all packages nvim_venv hosts" EXIT ERR INT QUIT STOP CONT
   zparseopts -D -F -K -- \
+    {h,-help}=help \
     {a,-all}=all \
-    {b,-brew}=brew \
-    {n,-npm}=npm \
-    {s,-submodules}=sm \
-    {v,-venv}=venv \
-    {h,-hosts}=hosts || return
+    {p,-packages}=packages \
+    {n,-nvim-venv}=nvim_venv \
+    {H,-hosts}=hosts || return
 
-  (($#all || $#npm)) && $0::_npm
-  (($#all || $#brew)) && $0::_brew
-  (($#all || $#sm)) && _dot::submodule::up
+  (( $#help )) && {$0::help; return 0}
+
+  (($#all || $#packages)) && {$0::_npm; $0::_brew; _dot::submodule::up}
   if [[ $+functions[_venv] ]]; then  # external dependency!
-    (($#all || $#venv)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
+    (($#all || $#nvim_venv)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
     (($#all || $#hosts)) && $0::_hosts
   fi
 }
