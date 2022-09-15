@@ -8,20 +8,20 @@ USAGE:
     List all submodules.
 
 OPTIONS:
-    -k, --key                         Select submodule folder. Optional.
+    -k, --key <name>                  Select submodule folder. Optional.
     -h, --help                        Show this message.
 EOF
   return 0
 }
 function _dot::submodule::ls {
   trap "unset help key" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help {k,-key}:=key
+  zparseopts -D -F -K -- {h,-help}=help {k,-key}:=key
 
-  ((${#@} > 0)) || { $0::help; return 1 }
+  (($#help)) && { $0::help; return 0 }
 
   # requires git 2.7.0
-  (( $#key )) && local chosen_key=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf) || local chosen_key=$key[-1]
-  [[ $#chosen_key -eq 0 ]] && { echo "No key selected."; return 1; }
+  (( $#key )) && local chosen_key=$key || local chosen_key=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf)
+  (( $#chosen_key )) || { echo "No key selected."; return 1; }
   local subfolder=$(jq -r ".submodules.$chosen_key" $DOTDIR_CONFIG)
 
   local urls=(${(@f)$(cat $DOTDIR/.gitmodules | grep 'url =' | awk '{print $3}')})
