@@ -17,10 +17,10 @@ SUBCOMMANDS:
 EOF
     return 0
 }
-function _dot::sm {_dot::submodule "$@"}
+function _dot::sm { _dot::submodule "$@" }
 function _dot::submodule {
   trap "unset help" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help || return
+  zparseopts -D -E -K -- {h,-help}=help
 
   (($# == 0 && $#help)) && {$0::help; return 0}
   (($# > 0 && $+functions[$0::$1])) || {$0::help; return 1}

@@ -16,7 +16,7 @@ OPTIONS:
 EOF
   return 0
 }
-function _dot::sys::up {_dot::sys::upgrade "$@"}
+function _dot::sys::up { _dot::sys::upgrade "$@" }
 function _dot::sys::upgrade {
   trap "unset help all packages nvim_venv hosts" EXIT ERR INT QUIT STOP CONT
   zparseopts -D -F -K -- \
@@ -24,7 +24,7 @@ function _dot::sys::upgrade {
     {a,-all}=all \
     {p,-packages}=packages \
     {n,-nvim-venv}=nvim_venv \
-    {H,-hosts}=hosts || return
+    {H,-hosts}=hosts
 
   (($#help)) && {$0::help; return 0}
 

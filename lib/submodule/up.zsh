@@ -14,7 +14,7 @@ EOF
 }
 function _dot::submodule::up {
   trap "unset help" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help || return
+  zparseopts -D -E -K -- {h,-help}=help
 
   (($#help)) && {_$0::help; return 0}
   git -C $DOTDIR submodule update --init --remote --recursive
