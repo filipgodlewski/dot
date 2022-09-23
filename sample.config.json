@@ -1,5 +1,5 @@
 {
   "submodules": {
-    "sample_key": "sample/path/to/storage"
+    "sample_target": "sample/path/to/storage"
   }
 }

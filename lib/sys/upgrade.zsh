@@ -58,7 +58,7 @@ function _dot::sys::upgrade::_hosts {
   local provider=$(jq -e -r '."hosts provider"' $DOTDIR_CONFIG 2> /dev/null)
   (($? == 1)) && {echo "No 'hosts provider' set in $DOTDIR_CONFIG! Can't perform setting up hosts."; return 0}
 
-  if [[ $(_dot::submodule::ls --key sys | grep $provider 2> /dev/null) ]]; then
+  if [[ $(_dot::submodule::ls --target sys | grep $provider 2> /dev/null) ]]; then
     local repo_dir="$(echo ${$(git -C $DOTDIR submodule | grep $provider)##[[:blank:]]} | cut -d' ' -f2)"
     venv new --project-path $DOTDIR/$repo_dir --no-link 2> /dev/null
     venv run --name $provider -m pip install -r $DOTDIR/$repo_dir/requirements.txt

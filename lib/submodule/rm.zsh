@@ -11,22 +11,22 @@ ARGS:
     <NAME>...    Name of the submodule(s) you are willing to remove from dotfiles.
 
 OPTIONS:
-    -k, --key                         Select submodule folder. Optional.
+    -k, --target                         Select submodule folder. Optional.
     -h, --help                        Show this message.
 EOF
   return 0
 }
 function _dot::submodule::rm {
-  trap "unset help key" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help {k,-key}:=key
+  trap "unset help target" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -E -K -- {h,-help}=help {t,-target}:=target
 
   ((${#@} > 0)) || { $0::help; return 1 }
 
   # requires git 2.7.0
-  (( $#key )) && local chosen_key=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf) || local chosen_key=$key[-1]
-  [[ -z $chosen_key ]] && { echo "No key selected."; return 1; }
-  local folder=$(jq -r ".submodules.$chosen_key" $DOTDIR_CONFIG)
-  local target="$chosen_key/.local/share/$folder"
+  (( $#target )) && local chosen_target=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf) || local chosen_target=$target[-1]
+  [[ -z $chosen_target ]] && { echo "No target selected."; return 1; }
+  local folder=$(jq -r ".submodules.$chosen_target" $DOTDIR_CONFIG)
+  local target="$chosen_target/.local/share/$folder"
 
   if [[ "${#@}" -eq 0 ]]; then
     local find_sm=$(\

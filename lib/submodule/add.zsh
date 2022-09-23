@@ -11,22 +11,22 @@ ARGS:
     <URL>        URL address to the .git object.
 
 OPTIONS:
-    -k, --key                         Select submodule folder. Optional.
+    -k, --target                         Select submodule folder. Optional.
     -h, --help                        Show this message.
 EOF
   return 0
 }
 function _dot::submodule::add {
-  trap "unset help key" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help {k,-key}:=key
+  trap "unset help target" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -E -K -- {h,-help}=help {t,-target}:=target
 
   ((${#@} > 0)) || { $0::help; return 1 }
 
   local urls=("$@")
-  (( $#key )) && local chosen_key=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf) || local chosen_key=$key[-1]
-  [[ $#chosen_key -eq 0 ]] && { echo "No key selected."; return 1; }
-  local folder=$(jq -r ".submodules.$chosen_key" $DOTDIR_CONFIG)
-  local target="$chosen_key/.local/share/$folder"
+  (( $#target )) && local chosen_target=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf) || local chosen_target=$target[-1]
+  [[ $#chosen_target -eq 0 ]] && { echo "No target selected."; return 1; }
+  local folder=$(jq -r ".submodules.$chosen_target" $DOTDIR_CONFIG)
+  local target="$chosen_target/.local/share/$folder"
 
   for url in ${urls[@]}; do
     local author=$(echo $url | cut -d'/' -f4)
