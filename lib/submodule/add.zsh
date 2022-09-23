@@ -11,7 +11,7 @@ ARGS:
     <URL>        URL address to the .git object.
 
 OPTIONS:
-    -k, --target                         Select submodule folder. Optional.
+    -t, --target                      Select submodule folder. Optional.
     -h, --help                        Show this message.
 EOF
   return 0

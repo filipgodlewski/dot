@@ -11,7 +11,7 @@ ARGS:
     <NAME>...    Name of the submodule(s) you are willing to remove from dotfiles.
 
 OPTIONS:
-    -k, --target                         Select submodule folder. Optional.
+    -t, --target                         Select submodule folder. Optional.
     -h, --help                        Show this message.
 EOF
   return 0

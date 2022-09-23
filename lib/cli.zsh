@@ -11,7 +11,6 @@ OPTIONS:
     -h, --help                        Show this message.
 
 SUBCOMMANDS:
-    cd                                Go to dotfiles dir.
     submodule <SUBCOMMAND>            Manage dotfile submodules. (alias: sm)
     sys <SUBCOMMAND>                  Manage system.
 EOF

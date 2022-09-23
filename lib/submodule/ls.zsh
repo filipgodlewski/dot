@@ -8,7 +8,7 @@ USAGE:
     List all submodules.
 
 OPTIONS:
-    -k, --target <name>                  Select submodule folder. Optional.
+    -t, --target <name>                  Select submodule folder. Optional.
     -h, --help                        Show this message.
 EOF
   return 0
