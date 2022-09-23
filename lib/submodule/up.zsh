@@ -16,7 +16,7 @@ function _dot::submodule::up {
   trap "unset help" EXIT ERR INT QUIT STOP CONT
   zparseopts -D -E -K -- {h,-help}=help || return
 
-  (( $#help )) && {_$0::help; return 0}
+  (($#help)) && {_$0::help; return 0}
   git -C $DOTDIR submodule update --init --remote --recursive
 
   # rebuild nvim remote plugins

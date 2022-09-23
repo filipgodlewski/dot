@@ -16,7 +16,7 @@ OPTIONS:
 EOF
   return 0
 }
-function _dot::sys::up { _dot::sys::upgrade "$@" }
+function _dot::sys::up {_dot::sys::upgrade "$@"}
 function _dot::sys::upgrade {
   trap "unset help all packages nvim_venv hosts" EXIT ERR INT QUIT STOP CONT
   zparseopts -D -F -K -- \
@@ -26,7 +26,7 @@ function _dot::sys::upgrade {
     {n,-nvim-venv}=nvim_venv \
     {H,-hosts}=hosts || return
 
-  (( $#help )) && {$0::help; return 0}
+  (($#help)) && {$0::help; return 0}
 
   (($#all || $#packages)) && {$0::_npm; $0::_brew; _dot::submodule::up}
   if [[ $+functions[_venv] ]]; then  # external dependency!

@@ -20,9 +20,9 @@ function dot {
   trap "unset help" EXIT ERR INT QUIT STOP CONT
   zparseopts -D -E -K -- {h,-help}=help || return
 
-  (( ${#@} == 0 && $#help )) && {_$0::help; return 0}
-  (($# > 0 && $+functions[_$0::$1])) || { _$0::help; return 1 }
+  (($# == 0 && $#help)) && {_$0::help; return 0}
+  (($# > 0 && $+functions[_$0::$1])) || {_$0::help; return 1}
 
   local cmd="$1"; shift
-  (( $#help )) && _dot::$cmd "$@" --help || _dot::$cmd "$@"
+  (($#help)) && _dot::$cmd "$@" --help || _dot::$cmd "$@"
 }

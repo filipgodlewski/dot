@@ -17,11 +17,11 @@ function _dot::submodule::ls {
   trap "unset help target" EXIT ERR INT QUIT STOP CONT
   zparseopts -D -F -K -- {h,-help}=help {t,-target}:=target
 
-  (($#help)) && { $0::help; return 0 }
+  (($#help)) && {$0::help; return 0}
 
   # requires git 2.7.0
-  (( $#target )) && local chosen_target=$target || local chosen_target=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf)
-  (( $#chosen_target )) || { echo "No target selected."; return 1; }
+  (($#target)) && local chosen_target=$target || local chosen_target=$(jq -r '.submodules | keys[]' $DOTDIR_CONFIG | fzf)
+  (($#chosen_target)) || {echo "No target selected."; return 1}
   local subfolder=$(jq -r ".submodules.$chosen_target" $DOTDIR_CONFIG)
 
   local urls=(${(@f)$(cat $DOTDIR/.gitmodules | grep 'url =' | awk '{print $3}')})
