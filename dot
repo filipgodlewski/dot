@@ -98,6 +98,7 @@ function .dot::sys::upgrade::_npm {
   echo ":: Upgrade npm ::"
   npm install --global npm
   local outdated_packages=(${(f@)$(npm list -g --depth 0 -p)##*/})
+  local package
   for package in $outdated_packages; do
     npm update -g $package
   done
@@ -187,6 +188,7 @@ function .dot::submodule::add {
   local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
   local target="$chosen_target/.local/share/$folder"
 
+  local url
   for url in ${urls[@]}; do
     local author=$(echo $url | cut -d'/' -f4)
     local repo="${$(echo $url | cut -d'/' -f5)[1,-5]}"
@@ -253,6 +255,7 @@ function .dot::submodule::ls {
   local parent=$chosen_target/.local/share/$subfolder/
 
   local -a data
+  local i
   for i in {1..$#urls}; do
     data+=("$(awk -v p=$parent '{sub(p, ""); print}' <<< $submodules[$i]) -> $urls[$i]")
   done
@@ -306,6 +309,7 @@ function .dot::submodule::rm {
   echo "${(F)chosen_sm}\n"
   echo "---\n"
 
+  local sm
   for sm in ${chosen_sm[@]}; do
     local full_path=$target/$sm
     [[ -d $DOTFILES_DATA_HOME/$full_path ]] || {echo "Directory '$DOTFILES_DATA_HOME/$full_path' does not exist."; continue}
