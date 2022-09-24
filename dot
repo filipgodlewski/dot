@@ -3,7 +3,6 @@
 # Some sane defaults
 emulate -LR zsh
 setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
-typeset -gA Plugins
 
 # Don't leak any functions
 typeset -g dotef
@@ -11,14 +10,9 @@ dotef=( ${(k)functions} )
 trap "unset -f -- \"\${(k)functions[@]:|dotef}\" &>/dev/null; unset dotef" EXIT
 trap "unset -f -- \"\${(k)functions[@]:|dotef}\" &>/dev/null; unset dotef; return 1" INT
 
-trap "unset help" EXIT ERR INT QUIT STOP CONT
-zparseopts -D -E -K -- {h,-help}=help
+local opt_help
+zparseopts -D -E -K -- {h,-help}=opt_help
 
-(($# == 0 && $#help)) && {+$0; return 0}
-(($# > 0 && $+functions[.$0::$1])) || {+$0; return 1}
-
-Plugins[dot_cmd]="$1"; shift 1
-(($#help)) && .$0::$Plugins[dot_cmd] "$@" --help || .$0::$Plugins[dot_cmd] "$@"
 
 function +dot {
   cat >&2 <<EOF
@@ -38,6 +32,12 @@ EOF
 }
 
 
+(($# == 0 && $#opt_help)) && {+$0; return 0}
+(($# > 0 && $+functions[.$0::$1])) || {+$0; return 1}
+
+local cmd="$1"; shift 1
+(($#opt_help)) && .$0::$cmd "$@" --help || .$0::$cmd "$@"
+
 function +dot::sys {
   cat >&2 <<EOF
 USAGE:
@@ -53,10 +53,10 @@ EOF
 }
 
 function .dot::sys {
-  trap "unset help" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help
+  local opt_help
+  zparseopts -D -E -K -- {h,-help}=opt_help
 
-  (($# == 0 && $#help)) && { +${0#.}; return 0 }
+  (($# == 0 && $#opt_help)) && { +${0#.}; return 0 }
   local cmd="$1"; shift 1
   $0::$cmd "$@"
 }
@@ -82,20 +82,20 @@ EOF
 function .dot::sys::up { .dot::sys::upgrade "$@" }
 
 function .dot::sys::upgrade {
-  trap "unset help all packages nvim_venv hosts" EXIT ERR INT QUIT STOP CONT
+  local opt_help opt_all opt_packages opt_nvim_venv opt_hosts
   zparseopts -D -F -K -- \
-    {h,-help}=help \
-    {a,-all}=all \
-    {p,-packages}=packages \
-    {n,-nvim-venv}=nvim_venv \
-    {H,-hosts}=hosts
+    {h,-help}=opt_help \
+    {a,-all}=opt_all \
+    {p,-packages}=opt_packages \
+    {n,-nvim-venv}=opt_nvim_venv \
+    {H,-hosts}=opt_hosts
 
-  (($#help)) && {+${0#.}; return 0}
+  (($#opt_help)) && {+${0#.}; return 0}
 
-  (($#all || $#packages)) && {$0::_npm; $0::_brew; _dot::submodule::up}
+  (($#opt_all || $#opt_packages)) && {$0::_npm; $0::_brew; _dot::submodule::up}
   if [[ $+functions[_venv] ]]; then  # external dependency!
-    (($#all || $#nvim_venv)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
-    (($#all || $#hosts)) && $0::_hosts
+    (($#opt_all || $#opt_nvim_venv)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
+    (($#opt_all || $#opt_hosts)) && $0::_hosts
   fi
 }
 
@@ -153,10 +153,10 @@ EOF
 function .dot::sm { .dot::submodule "$@" }
 
 function .dot::submodule {
-  trap "unset help" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help
+  local opt_help
+  zparseopts -D -E -K -- {h,-help}=opt_help
 
-  (($# == 0 && $#help)) && {+${0#.}; return 0}
+  (($# == 0 && $#opt_help)) && {+${0#.}; return 0}
 
   local cmd="$1"; shift 1
   $0::$cmd "$@"
@@ -181,13 +181,13 @@ EOF
 }
 
 function .dot::submodule::add {
-  trap "unset help target" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help {t,-target}:=target
+  local opt_help opt_target
+  zparseopts -D -E -K -- {h,-help}=opt_help {t,-target}:=opt_target
 
-  (($#)) || {+${0#.}; return 1}
+  (($# == 0 && $#opt_help)) || {+${0#.}; return 1}
 
   local urls=("$@")
-  (($#target)) && local chosen_target=$target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
+  (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
   local target="$chosen_target/.local/share/$folder"
@@ -214,10 +214,10 @@ EOF
   return 0
 }
 function .dot::submodule::up {
-  trap "unset help" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help
+  local opt_help
+  zparseopts -D -E -K -- {h,-help}=opt_help
 
-  (($#help)) && {+${0#.}; return 0}
+  (($#opt_help)) && {+${0#.}; return 0}
   git -C $DOTFILES_DATA_HOME submodule update --init --remote --recursive
 
   # rebuild nvim remote plugins
@@ -243,13 +243,13 @@ EOF
 }
 
 function .dot::submodule::ls {
-  trap "unset help target" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -F -K -- {h,-help}=help {t,-target}:=target
+  local opt_help opt_target
+  zparseopts -D -F -K -- {h,-help}=opt_help {t,-target}:=opt_target
 
-  (($#help)) && {+${0#.}; return 0}
+  (($#opt_help)) && {+${0#.}; return 0}
 
   # requires git 2.7.0
-  (($#target)) && local chosen_target=$target || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
+  (($#opt_target)) && local chosen_target=$opt_target || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local subfolder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
 
@@ -283,14 +283,14 @@ EOF
 }
 
 function .dot::submodule::rm {
-  trap "unset help target" EXIT ERR INT QUIT STOP CONT
-  zparseopts -D -E -K -- {h,-help}=help {t,-target}:=target
+  local opt_help opt_target
+  zparseopts -D -E -K -- {h,-help}=opt_help {t,-target}:=opt_target
 
   (($# > 0)) || {+${0#.}; return 1}
 
   # requires git 2.7.0
-  (($#target)) && local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf) || local chosen_target=$target[-1]
-  [[ -z $chosen_target ]] && {echo "No target selected."; return 1}
+  (($#opt_target)) && local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf) || local chosen_target=$opt_target[-1]
+  (($#chosen_target)) || {echo "No target selected."; return 1}
   local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
   local target="$chosen_target/.local/share/$folder"
 
