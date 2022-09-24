@@ -44,12 +44,12 @@ dot sm rm
 ### ⚙️ Configuration
 
 ```zsh
-echo $DOTDIR
+echo $DOTFILES_DATA_HOME
 # The default is $HOME/dotfiles
 # Override it if your dotfiles are somewhere else
 
-echo $DOTDIR_CONFIG
-# The defult is $DOTDIR/config.json
+echo $DOTFILES_CONFIG_FILE
+# The defult is $DOTFILES_DATA_HOME/config.json
 ```
 
 The rest of the configurations can and should be managed through the config.json file.

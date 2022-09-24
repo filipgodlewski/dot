@@ -1,0 +1,325 @@
+#! /usr/bin/env zsh
+
+# Some sane defaults
+emulate -LR zsh
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+typeset -gA Plugins
+
+# Don't leak any functions
+typeset -g dotef
+dotef=( ${(k)functions} )
+trap "unset -f -- \"\${(k)functions[@]:|dotef}\" &>/dev/null; unset dotef" EXIT
+trap "unset -f -- \"\${(k)functions[@]:|dotef}\" &>/dev/null; unset dotef; return 1" INT
+
+trap "unset help" EXIT ERR INT QUIT STOP CONT
+zparseopts -D -E -K -- {h,-help}=help
+
+(($# == 0 && $#help)) && {+$0; return 0}
+(($# > 0 && $+functions[.$0::$1])) || {+$0; return 1}
+
+Plugins[dot_cmd]="$1"; shift 1
+(($#help)) && .$0::$Plugins[dot_cmd] "$@" --help || .$0::$Plugins[dot_cmd] "$@"
+
+function +dot {
+  cat >&2 <<EOF
+dot -- A very simple dotfiles manager.
+
+USAGE:
+    ${(j: :)${(s.::.)0#+}} <SUBCOMMAND>
+
+OPTIONS:
+    -h, --help                        Show this message.
+
+SUBCOMMANDS:
+    submodule <SUBCOMMAND>            Manage dotfile submodules. (alias: sm)
+    sys <SUBCOMMAND>                  Manage system.
+EOF
+  return 0
+}
+
+
+function +dot::sys {
+  cat >&2 <<EOF
+USAGE:
+    ${(j: :)${(s.::.)0#+}} <SUBCOMMAND>
+
+OPTIONS:
+    -h, --help                        Show this message.
+
+SUBCOMMANDS:
+    upgrade                           Upgrade system-wide packages and such. (alias: up)
+EOF
+  return 0
+}
+
+function .dot::sys {
+  trap "unset help" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -E -K -- {h,-help}=help
+
+  (($# == 0 && $#help)) && { +${0#.}; return 0 }
+  local cmd="$1"; shift 1
+  $0::$cmd "$@"
+}
+
+
+function +dot::sys::upgrade {
+  cat >&2 <<EOF
+USAGE:
+    ${(j: :)${(s.::.)0#+}} [options]
+
+    Upgrade system-wide applications, packages, hosts and such.
+
+OPTIONS:
+    -a, --all                         Update everything: npm, brew and submodules, nvim venv, and hosts.
+    -p, --packages                    Update npm, brew and submodules.
+    -n, --nvim-venv                   Update nvim venv python packages.
+    -h, --hosts                       Update hosts file with blockers for fakenews, gambling and porn sites.
+    -h, --help                        Show this message.
+EOF
+  return 0
+}
+
+function .dot::sys::up { .dot::sys::upgrade "$@" }
+
+function .dot::sys::upgrade {
+  trap "unset help all packages nvim_venv hosts" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -F -K -- \
+    {h,-help}=help \
+    {a,-all}=all \
+    {p,-packages}=packages \
+    {n,-nvim-venv}=nvim_venv \
+    {H,-hosts}=hosts
+
+  (($#help)) && {+${0#.}; return 0}
+
+  (($#all || $#packages)) && {$0::_npm; $0::_brew; _dot::submodule::up}
+  if [[ $+functions[_venv] ]]; then  # external dependency!
+    (($#all || $#nvim_venv)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
+    (($#all || $#hosts)) && $0::_hosts
+  fi
+}
+
+function .dot::sys::upgrade::_npm {
+  echo ":: Upgrade npm ::"
+  npm install --global npm
+  local outdated_packages=(${(f@)$(npm list -g --depth 0 -p)##*/})
+  for package in $outdated_packages; do
+    npm update -g $package
+  done
+  npm cache clean --force
+}
+
+function .dot::sys::upgrade::_brew {
+  echo ":: Upgrade brew ::"
+  brew update
+  brew bundle dump --force --file=~/.Brewfile
+  brew bundle --file=~/.Brewfile
+  brew cleanup --prune=all
+}
+
+function .dot::sys::upgrade::_hosts {
+  echo ":: Upgrade hosts ::"
+  local provider=$(jq -e -r '."hosts provider"' $DOTFILES_CONFIG_FILE 2> /dev/null)
+  (($? == 1)) && {echo "No 'hosts provider' set in $DOTFILES_CONFIG_FILE! Can't perform setting up hosts."; return 0}
+
+  if [[ $(_dot::submodule::ls --target sys | grep $provider 2> /dev/null) ]]; then
+    local repo_dir="$(echo ${$(git -C $DOTFILES_DATA_HOME submodule | grep $provider)##[[:blank:]]} | cut -d' ' -f2)"
+    venv new --project-path $DOTFILES_DATA_HOME/$repo_dir --no-link 2> /dev/null
+    venv run --name $provider -m pip install -r $DOTFILES_DATA_HOME/$repo_dir/requirements.txt
+    venv run --name $provider $DOTFILES_DATA_HOME/$repo_dir/updateHostsFile.py -e fakenews gambling porn -f -r -a
+    git -C $DOTFILES_DATA_HOME/$repo_dir reset --hard
+  fi
+}
+
+
+function +dot::submodule {
+  cat >&2 <<EOF
+USAGE:
+    ${(j: :)${(s.::.)0#+}} <SUBCOMMAND>
+
+OPTIONS:
+    -h, --help                        Show this message.
+
+SUBCOMMANDS:
+    add <URL>                         Add new submodule to the dotfiles repository.
+                                      Will prompt to select target folder.
+    ls                                List all added submodules within the dotfiles repository.
+    rm                                Remove selected submodule from dotfiles repository.
+    up                                Update all submodules recursively. 
+EOF
+  return 0
+}
+
+function .dot::sm { .dot::submodule "$@" }
+
+function .dot::submodule {
+  trap "unset help" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -E -K -- {h,-help}=help
+
+  (($# == 0 && $#help)) && {+${0#.}; return 0}
+
+  local cmd="$1"; shift 1
+  $0::$cmd "$@"
+}
+
+
+function +dot::submodule::add {
+  cat >&2 <<EOF
+USAGE:
+    ${(j: :)${(s.::.)0#+}} [options] [URL]
+
+    Add new submodule to dotfiles.
+
+ARGS:
+    <URL>        URL address to the .git object.
+
+OPTIONS:
+    -t, --target                      Select submodule folder. Optional.
+    -h, --help                        Show this message.
+EOF
+  return 0
+}
+
+function .dot::submodule::add {
+  trap "unset help target" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -E -K -- {h,-help}=help {t,-target}:=target
+
+  (($#)) || {+${0#.}; return 1}
+
+  local urls=("$@")
+  (($#target)) && local chosen_target=$target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
+  (($#chosen_target)) || {echo "No target selected."; return 1}
+  local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  local target="$chosen_target/.local/share/$folder"
+
+  for url in ${urls[@]}; do
+    local author=$(echo $url | cut -d'/' -f4)
+    local repo="${$(echo $url | cut -d'/' -f5)[1,-5]}"
+    git -C $DOTFILES_DATA_HOME submodule add -f $url $target/$author.$repo
+    git -C $DOTFILES_DATA_HOME submodule update --init --recursive $target/$author.$repo
+  done
+}
+
+
+function +dot::submodule::up {
+  cat >&2 <<EOF
+USAGE:
+    ${(j: :)${(s.::.)0#+}}
+
+    Upgrade submodules.
+
+OPTIONS:
+    -h, --help                        Show this message.
+EOF
+  return 0
+}
+function .dot::submodule::up {
+  trap "unset help" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -E -K -- {h,-help}=help
+
+  (($#help)) && {+${0#.}; return 0}
+  git -C $DOTFILES_DATA_HOME submodule update --init --remote --recursive
+
+  # rebuild nvim remote plugins
+  cd $XDG_DATA_HOME/nvim/site/pack/add/start/nvim-telescope.telescope-fzf-native.nvim
+  make &> /dev/null
+  cd - &> /dev/null
+  nvim --headless +"UpdateRemotePlugins | q" &> /dev/null
+}
+
+
+function +dot::submodule::ls {
+  cat >&2 <<EOF
+USAGE:
+    ${(j: :)${(s.::.)0#+}} [options]
+
+    List all submodules.
+
+OPTIONS:
+    -t, --target <name>                  Select submodule folder. Optional.
+    -h, --help                        Show this message.
+EOF
+  return 0
+}
+
+function .dot::submodule::ls {
+  trap "unset help target" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -F -K -- {h,-help}=help {t,-target}:=target
+
+  (($#help)) && {+${0#.}; return 0}
+
+  # requires git 2.7.0
+  (($#target)) && local chosen_target=$target || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
+  (($#chosen_target)) || {echo "No target selected."; return 1}
+  local subfolder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+
+  local urls=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'url =' | awk '{print $3}')})
+  local submodules=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'path =' | awk '{print $3}')})
+  local parent=$chosen_target/.local/share/$subfolder/
+
+  local -a data
+  for i in {1..$#urls}; do
+    data+=("$(awk -v p=$parent '{sub(p, ""); print}' <<< $submodules[$i]) -> $urls[$i]")
+  done
+  echo ${(F)data} | grep -v '.local' | sort
+}
+
+
+function +dot::submodule::rm {
+  cat >&2 <<EOF
+USAGE:
+    ${(j: :)${(s.::.)0#+}} [options] [NAME]...
+
+    Remove submodule(s).
+
+ARGS:
+    <NAME>...    Name of the submodule(s) you are willing to remove from dotfiles.
+
+OPTIONS:
+    -t, --target                         Select submodule folder. Optional.
+    -h, --help                        Show this message.
+EOF
+  return 0
+}
+
+function .dot::submodule::rm {
+  trap "unset help target" EXIT ERR INT QUIT STOP CONT
+  zparseopts -D -E -K -- {h,-help}=help {t,-target}:=target
+
+  (($# > 0)) || {+${0#.}; return 1}
+
+  # requires git 2.7.0
+  (($#target)) && local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf) || local chosen_target=$target[-1]
+  [[ -z $chosen_target ]] && {echo "No target selected."; return 1}
+  local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  local target="$chosen_target/.local/share/$folder"
+
+  if (($# == 0)); then
+    local find_sm=$(\
+      git -C $DOTFILES_DATA_HOME submodule--helper list \
+      | grep "$target" \
+      | awk -v t=$target '{sub(t"/", ""); print $4}' \
+      | fzf -m --preview-window=right:80% --preview "bat --color=always --line-range :500 $DOTFILES_DATA_HOME/$target/{}/README.*" \
+    )
+    local chosen_sm=("${(@f)find_sm}")
+    [[ -z $chosen_sm ]] && {echo "No submodule selected."; return 1}
+  else
+    local chosen_sm=("$@")
+  fi
+
+  echo "Selected submodule(s):\n"
+  echo "${(F)chosen_sm}\n"
+  echo "---\n"
+
+  for sm in ${chosen_sm[@]}; do
+    local full_path=$target/$sm
+    [[ -d $DOTFILES_DATA_HOME/$full_path ]] || {echo "Directory '$DOTFILES_DATA_HOME/$full_path' does not exist."; continue}
+    echo "Taking $sm..."
+    git -C $DOTFILES_DATA_HOME submodule deinit --quiet -f $full_path
+    echo "Deinitialized submodule."
+
+    git -C $DOTFILES_DATA_HOME rm --quiet -f $full_path
+    rm -rf $DOTFILES_DATA_HOME/.git/modules/$full_path
+    echo "Removed submodule from tree.\n"
+  done
+}
