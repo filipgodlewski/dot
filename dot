@@ -14,6 +14,7 @@ local opt_help
 zparseopts -D -E -K -- {h,-help}=opt_help
 
 
+# Setup functions
 function +dot {
   cat >&2 <<EOF
 dot -- A very simple dotfiles manager.
@@ -31,12 +32,6 @@ EOF
   return 0
 }
 
-
-(($# == 0 && $#opt_help)) && {+$0; return 0}
-(($# > 0 && $+functions[.$0::$1])) || {+$0; return 1}
-
-local cmd="$1"; shift 1
-(($#opt_help)) && .$0::$cmd "$@" --help || .$0::$cmd "$@"
 
 function +dot::sys {
   cat >&2 <<EOF
@@ -323,3 +318,9 @@ function .dot::submodule::rm {
     echo "Removed submodule from tree.\n"
   done
 }
+
+
+(($# == 0 && $#opt_help)) && {+$0; return 0}
+
+local cmd="$1"; shift 1
+(($#opt_help)) && .$0::$cmd "$@" --help || .$0::$cmd "$@"
