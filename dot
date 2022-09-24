@@ -53,7 +53,7 @@ function .dot::sys {
 
   (($# == 0 && $#opt_help)) && { +${0#.}; return 0 }
   local cmd="$1"; shift 1
-  $0::$cmd "$@"
+  (($#opt_help)) && $0::$cmd "$@" --help || $0::$cmd "$@"
 }
 
 
@@ -154,7 +154,7 @@ function .dot::submodule {
   (($# == 0 && $#opt_help)) && {+${0#.}; return 0}
 
   local cmd="$1"; shift 1
-  $0::$cmd "$@"
+  (($#opt_help)) && $0::$cmd "$@" --help || $0::$cmd "$@"
 }
 
 
