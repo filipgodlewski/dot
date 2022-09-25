@@ -89,7 +89,7 @@ function .dot::sys::upgrade {
 
   (($#opt_help)) && {+${0#.}; return 0}
 
-  (($#opt_all || $#opt_packages)) && {$0::_npm; $0::_brew; _dot::submodule::up}
+  (($#opt_all || $#opt_packages)) && {$0::_npm; $0::_brew; .dot::submodule::up}
   if [[ $+functions[_venv] ]]; then  # external dependency!
     (($#opt_all || $#opt_nvim_venv)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
     (($#opt_all || $#opt_hosts)) && $0::_hosts
