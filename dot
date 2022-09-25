@@ -52,6 +52,8 @@ function .dot::sys {
   zparseopts -D -E -K -- {h,-help}=opt_help
 
   (($# == 0 && $#opt_help)) && { +${0#.}; return 0 }
+  (($# == 0)) && {+${0#.}; return 1}
+
   local cmd="$1"; shift 1
   (($#opt_help)) && $0::$cmd "$@" --help || $0::$cmd "$@"
 }
@@ -153,6 +155,7 @@ function .dot::submodule {
   zparseopts -D -E -K -- {h,-help}=opt_help
 
   (($# == 0 && $#opt_help)) && {+${0#.}; return 0}
+  (($# == 0)) && {+${0#.}; return 1}
 
   local cmd="$1"; shift 1
   (($#opt_help)) && $0::$cmd "$@" --help || $0::$cmd "$@"
@@ -180,7 +183,7 @@ function .dot::submodule::add {
   local opt_help opt_target
   zparseopts -D -E -K -- {h,-help}=opt_help {t,-target}:=opt_target
 
-  (($# == 0 && $#opt_help)) || {+${0#.}; return 1}
+  (($# == 0 || $#opt_help)) && {+${0#.}; return 0}
 
   local urls=("$@")
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
@@ -214,7 +217,7 @@ function .dot::submodule::up {
   local opt_help
   zparseopts -D -E -K -- {h,-help}=opt_help
 
-  (($#opt_help)) && {+${0#.}; return 0}
+  (($# == 0 || $#opt_help)) && {+${0#.}; return 0}
   git -C $DOTFILES_DATA_HOME submodule update --init --remote --recursive
 
   # rebuild nvim remote plugins
@@ -246,13 +249,13 @@ function .dot::submodule::ls {
   (($#opt_help)) && {+${0#.}; return 0}
 
   # requires git 2.7.0
-  (($#opt_target)) && local chosen_target=$opt_target || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
+  (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
-  local subfolder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
 
   local urls=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'url =' | awk '{print $3}')})
   local submodules=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'path =' | awk '{print $3}')})
-  local parent=$chosen_target/.local/share/$subfolder/
+  local parent=$chosen_target/.local/share/$folder/
 
   local -a data
   local i
@@ -284,10 +287,10 @@ function .dot::submodule::rm {
   local opt_help opt_target
   zparseopts -D -E -K -- {h,-help}=opt_help {t,-target}:=opt_target
 
-  (($# > 0)) || {+${0#.}; return 1}
+  (($#opt_help)) && {+${0#.}; return 0}
 
   # requires git 2.7.0
-  (($#opt_target)) && local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf) || local chosen_target=$opt_target[-1]
+  (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
   local target="$chosen_target/.local/share/$folder"
@@ -325,6 +328,7 @@ function .dot::submodule::rm {
 
 
 (($# == 0 && $#opt_help)) && {+$0; return 0}
+(($# == 0)) && {+$0; return 1}
 
 local cmd="$1"; shift 1
 (($#opt_help)) && .$0::$cmd "$@" --help || .$0::$cmd "$@"
