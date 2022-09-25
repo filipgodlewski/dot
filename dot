@@ -213,11 +213,12 @@ OPTIONS:
 EOF
   return 0
 }
+
 function .dot::submodule::up {
   local opt_help
   zparseopts -D -E -K -- {h,-help}=opt_help
 
-  (($# == 0 || $#opt_help)) && {+${0#.}; return 0}
+  (($#opt_help)) && {+${0#.}; return 0}
   git -C $DOTFILES_DATA_HOME submodule update --init --remote --recursive
 
   # rebuild nvim remote plugins
