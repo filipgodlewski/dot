@@ -70,7 +70,7 @@ OPTIONS:
     -a, --all                         Update everything: npm, brew and submodules, nvim venv, and hosts.
     -p, --packages                    Update npm, brew and submodules.
     -n, --nvim-venv                   Update nvim venv python packages.
-    -h, --hosts                       Update hosts file with blockers for fakenews, gambling and porn sites.
+    -H, --hosts                       Update hosts file with blockers for fakenews, gambling and porn sites.
     -h, --help                        Show this message.
 EOF
   return 0
