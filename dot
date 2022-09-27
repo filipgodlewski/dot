@@ -120,7 +120,7 @@ function .dot::sys::upgrade::_hosts {
   local provider=$(jq -e -r '."hosts provider"' $DOTFILES_CONFIG_FILE 2> /dev/null)
   (($? == 1)) && {echo "No 'hosts provider' set in $DOTFILES_CONFIG_FILE! Can't perform setting up hosts."; return 0}
 
-  if [[ $(_dot::submodule::ls --target sys | grep $provider 2> /dev/null) ]]; then
+  if [[ $(.dot::submodule::ls --target sys | grep $provider 2> /dev/null) ]]; then
     local repo_dir="$(echo ${$(git -C $DOTFILES_DATA_HOME submodule | grep $provider)##[[:blank:]]} | cut -d' ' -f2)"
     venv new --project-path $DOTFILES_DATA_HOME/$repo_dir --no-link 2> /dev/null
     venv run --name $provider -m pip install -r $DOTFILES_DATA_HOME/$repo_dir/requirements.txt
