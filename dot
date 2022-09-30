@@ -189,14 +189,16 @@ function .dot::submodule::add {
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  target=${target/#\~/$HOME}
   [[ -d $target ]] || mkdir -p $target
+  local dotfiles_target="$chosen_target${target/$HOME}"
 
   local url
   for url in ${urls[@]}; do
     local author=$(echo $url | cut -d'/' -f4)
     local repo="${$(echo $url | cut -d'/' -f5)[1,-5]}"
-    git -C $DOTFILES_DATA_HOME submodule add -f $url $target/$author.$repo
-    git -C $DOTFILES_DATA_HOME submodule update --init --recursive $target/$author.$repo
+    git -C $DOTFILES_DATA_HOME submodule add -f $url $dotfiles_target/$author.$repo
+    git -C $DOTFILES_DATA_HOME submodule update --init --recursive $dotfiles_target/$author.$repo
   done
 }
 
@@ -253,11 +255,12 @@ function .dot::submodule::ls {
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  target=${target/#\~/$HOME}
   [[ -d $target ]] || {echo "Target path does not exist. No submodules to list."; return 0}
 
   local urls=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'url =' | awk '{print $3}')})
   local submodules=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'path =' | awk '{print $3}')})
-  local parent=$target/
+  local parent="$chosen_target${target/$HOME}/"
 
   local -a data
   local i
@@ -295,14 +298,16 @@ function .dot::submodule::rm {
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  target=${target/#\~/$HOME}
   [[ -d $target ]] || {echo "Target path does not exist. Nothing to be removed."; return 0}
+  local dotfiles_target="$chosen_target${target/$HOME}"
 
   if (($# == 0)); then
     local find_sm=$(\
       git -C $DOTFILES_DATA_HOME submodule--helper list \
-      | grep "$target" \
-      | awk -v t=$target '{sub(t"/", ""); print $4}' \
-      | fzf -m --preview-window=right:80% --preview "bat --color=always --line-range :500 $DOTFILES_DATA_HOME/$target/{}/README.*" \
+      | grep "$dotfiles_target" \
+      | awk -v t=$dotfiles_target '{sub(t"/", ""); print $4}' \
+      | fzf -m --preview-window=right:80% --preview "bat --color=always --line-range :500 $DOTFILES_DATA_HOME/$dotfiles_target/{}/README.*" \
     )
     local chosen_sm=("${(@f)find_sm}")
     [[ -z $chosen_sm ]] && {echo "No submodule selected."; return 1}
@@ -316,7 +321,7 @@ function .dot::submodule::rm {
 
   local sm
   for sm in ${chosen_sm[@]}; do
-    local full_path=$target/$sm
+    local full_path=$dotfiles_target/$sm
     [[ -d $DOTFILES_DATA_HOME/$full_path ]] || {echo "Directory '$DOTFILES_DATA_HOME/$full_path' does not exist."; continue}
     echo "Taking $sm..."
     git -C $DOTFILES_DATA_HOME submodule deinit --quiet -f $full_path
