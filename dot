@@ -189,6 +189,7 @@ function .dot::submodule::add {
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  [[ -d $target ]] || mkdir -p $target
 
   local url
   for url in ${urls[@]}; do
@@ -252,6 +253,7 @@ function .dot::submodule::ls {
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  [[ -d $target ]] || {echo "Target path does not exist. No submodules to list."; return 0}
 
   local urls=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'url =' | awk '{print $3}')})
   local submodules=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'path =' | awk '{print $3}')})
@@ -293,6 +295,7 @@ function .dot::submodule::rm {
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
   local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  [[ -d $target ]] || {echo "Target path does not exist. Nothing to be removed."; return 0}
 
   if (($# == 0)); then
     local find_sm=$(\
