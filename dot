@@ -188,8 +188,7 @@ function .dot::submodule::add {
   local urls=("$@")
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
-  local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
-  local target="$chosen_target/.local/share/$folder"
+  local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
 
   local url
   for url in ${urls[@]}; do
@@ -252,11 +251,11 @@ function .dot::submodule::ls {
   # requires git 2.7.0
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
-  local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
+  local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
 
   local urls=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'url =' | awk '{print $3}')})
   local submodules=(${(@f)$(cat $DOTFILES_DATA_HOME/.gitmodules | grep 'path =' | awk '{print $3}')})
-  local parent=$chosen_target/.local/share/$folder/
+  local parent=$target/
 
   local -a data
   local i
@@ -293,8 +292,7 @@ function .dot::submodule::rm {
   # requires git 2.7.0
   (($#opt_target)) && local chosen_target=$opt_target[-1] || local chosen_target=$(jq -r '.submodules | keys[]' $DOTFILES_CONFIG_FILE | fzf)
   (($#chosen_target)) || {echo "No target selected."; return 1}
-  local folder=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
-  local target="$chosen_target/.local/share/$folder"
+  local target=$(jq -r ".submodules.$chosen_target" $DOTFILES_CONFIG_FILE)
 
   if (($# == 0)); then
     local find_sm=$(\
