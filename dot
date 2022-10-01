@@ -123,7 +123,7 @@ function .dot::sys::upgrade::_hosts {
   if [[ $(.dot::submodule::ls --target sys | grep $provider 2> /dev/null) ]]; then
     local repo_dir="$(echo ${$(git -C $DOTFILES_DATA_HOME submodule | grep $provider)##[[:blank:]]} | cut -d' ' -f2)"
     venv new --project-path $DOTFILES_DATA_HOME/$repo_dir --no-link 2> /dev/null
-    venv run --name $provider -m pip install -r $DOTFILES_DATA_HOME/$repo_dir/requirements.txt
+    venv run --name $provider -m pip install -U -r $DOTFILES_DATA_HOME/$repo_dir/requirements.txt
     venv run --name $provider $DOTFILES_DATA_HOME/$repo_dir/updateHostsFile.py -e fakenews gambling porn -f -r -a
     git -C $DOTFILES_DATA_HOME/$repo_dir reset --hard
   fi
