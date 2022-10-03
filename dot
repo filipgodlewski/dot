@@ -71,6 +71,7 @@ OPTIONS:
     -p, --packages                    Update npm, brew and submodules.
     -n, --nvim-venv                   Update nvim venv python packages.
     -H, --hosts                       Update hosts file with blockers for fakenews, gambling and porn sites.
+    -f, --fonts                       Update Recursive Code font to the newest ones.
     -h, --help                        Show this message.
 EOF
   return 0
@@ -89,43 +90,50 @@ function .dot::sys::upgrade {
 
   (($#opt_help)) && {+${0#.}; return 0}
 
-  (($#opt_all || $#opt_packages)) && {$0::_npm; $0::_brew; .dot::submodule::up}
+  (($#opt_all || $#opt_packages)) && {$0::_npm; $0::_brew; .dot::submodule::up > /dev/null}
   if [[ $+functions[_venv] ]]; then  # external dependency!
-    (($#opt_all || $#opt_nvim_venv)) && {echo ":: Upgrade nvim venv ::"; venv update nvim}
+    (($#opt_all || $#opt_nvim_venv)) && {echo "🔥 Upgrade nvim venv"; venv update nvim}
     (($#opt_all || $#opt_hosts)) && $0::_hosts
   fi
 }
 
 function .dot::sys::upgrade::_npm {
-  echo ":: Upgrade npm ::"
-  npm install --global npm
+  echo "🔥 Upgrade npm"
+  echo "📦 Update npm itself"
+  npm install --global npm > /dev/null
   local outdated_packages=(${(f@)$(npm list -g --depth 0 -p)##*/})
   local package
+  echo "📦 Update global outdated npm packages"
   for package in $outdated_packages; do
-    npm update -g $package
+    npm update -g $package > /dev/null
   done
-  npm cache clean --force
+  npm cache clean --force > /dev/null
 }
 
 function .dot::sys::upgrade::_brew {
-  echo ":: Upgrade brew ::"
-  brew update
-  brew bundle dump --force --file=~/.Brewfile
-  brew bundle --file=~/.Brewfile
-  brew cleanup --prune=all
+  echo "🔥 Upgrade brew"
+  echo "🍺 Update brew itself"
+  brew update --quiet
+  echo "💾 Dump bundle"
+  brew bundle dump --force --file=~/.Brewfile --quiet
+  echo "📦 Update bundle"
+  brew bundle --file=~/.Brewfile --quiet
+  echo "🧹 Clean brew up"
+  brew cleanup --prune=all --quiet
 }
 
 function .dot::sys::upgrade::_hosts {
-  echo ":: Upgrade hosts ::"
+  echo "🔥 Upgrade hosts"
   local provider=$(jq -e -r '."hosts provider"' $DOTFILES_CONFIG_FILE 2> /dev/null)
   (($? == 1)) && {echo "No 'hosts provider' set in $DOTFILES_CONFIG_FILE! Can't perform setting up hosts."; return 0}
 
   if [[ $(.dot::submodule::ls --target sys | grep $provider 2> /dev/null) ]]; then
     local repo_dir="$(echo ${$(git -C $DOTFILES_DATA_HOME submodule | grep $provider)##[[:blank:]]} | cut -d' ' -f2)"
-    venv new --project-path $DOTFILES_DATA_HOME/$repo_dir --no-link 2> /dev/null
-    venv run --name $provider -m pip install -U -r $DOTFILES_DATA_HOME/$repo_dir/requirements.txt
-    venv run --name $provider $DOTFILES_DATA_HOME/$repo_dir/updateHostsFile.py -e fakenews gambling porn -f -r -a
-    git -C $DOTFILES_DATA_HOME/$repo_dir reset --hard
+    venv new --project-path $DOTFILES_DATA_HOME/$repo_dir --no-link &> /dev/null
+    venv run --name $provider -m pip install -U -r $DOTFILES_DATA_HOME/$repo_dir/requirements.txt --quiet
+    echo "📦 Update hosts file"
+    venv run --name $provider $DOTFILES_DATA_HOME/$repo_dir/updateHostsFile.py -e fakenews gambling porn -f -r -a > /dev/null
+    git -C $DOTFILES_DATA_HOME/$repo_dir reset --hard --quiet
   fi
 }
 
