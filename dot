@@ -230,12 +230,6 @@ function .dot::submodule::up {
 
   (($#opt_help)) && {+${0#.}; return 0}
   git -C $DOTFILES_DATA_HOME submodule update --init --remote --recursive
-
-  # rebuild nvim remote plugins
-  cd $XDG_DATA_HOME/nvim/site/pack/add/start/nvim-telescope.telescope-fzf-native.nvim
-  make &> /dev/null
-  cd - &> /dev/null
-  nvim --headless +"UpdateRemotePlugins | q" &> /dev/null
 }
 
 
@@ -312,7 +306,8 @@ function .dot::submodule::rm {
 
   if (($# == 0)); then
     local find_sm=$(\
-      git -C $DOTFILES_DATA_HOME submodule--helper list \
+      git -C $DOTFILES_DATA_HOME ls-files --stage \
+      | grep '^160000' \
       | grep "$dotfiles_target" \
       | awk -v t=$dotfiles_target '{sub(t"/", ""); print $4}' \
       | fzf -m --preview-window=right:80% --preview "bat --color=always --line-range :500 $DOTFILES_DATA_HOME/$dotfiles_target/{}/README.*" \
